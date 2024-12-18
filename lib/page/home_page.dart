@@ -1,6 +1,10 @@
-
+import 'dart:convert';
+import 'package:betalents/page/pesquisa.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:test_tecnico_betalent/page/funcionarios.dart';
+
+import '../object/usuario.dart';
+import 'funcionarios.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,10 +14,30 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  TextEditingController controllerPesquisa = TextEditingController();
-  String hintText = "Pesquisar";
-  
-  get http => null;
+  List<Usuario> users = [];
+  List<Usuario> usersShow = [];
+
+  Future<void> fetchData() async {
+    final response =
+        await http.get(Uri.parse('http://192.168.1.7:8080/employees'));
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+
+      setState(() {
+        users = body.map((dynamic item) => Usuario.fromJson(item)).toList();
+        usersShow = users;
+      });
+    } else {
+      throw Exception('Failed to load post');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
+
   @override
   Widget build(BuildContext econtext) {
     return Scaffold(
@@ -52,7 +76,7 @@ class _HomePageState extends State<HomePage> {
         padding: EdgeInsets.all(8.0),
         child: Container(
           width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height ,
+          height: MediaQuery.of(context).size.height,
           child: ListView(
             children: [
               Padding(
@@ -62,30 +86,11 @@ class _HomePageState extends State<HomePage> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: controllerPesquisa,
-                  decoration: InputDecoration(
-                    enabled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      gapPadding: 30,
-                      borderSide: BorderSide(width: 0.0),
-                    ),
-                    prefixIcon: Icon(Icons.search),
-                    hintText: hintText,
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  ),
-                ),
-              ),
+              Pesquisa(user: users),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row( 
+                  Row(
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -96,15 +101,16 @@ class _HomePageState extends State<HomePage> {
                       ),
                       Text("Nome")
                     ],
-                  ),Container(
-                    child: Icon(Icons.circle, size: 10,),
                   ),
-                 
+                  Container(
+                    child: Icon(
+                      Icons.circle,
+                      size: 10,
+                    ),
+                  ),
                 ],
               ),
-             
-            Funcionarios(),
-             
+              Funcionarios(users: usersShow),
             ],
           ),
         ),
